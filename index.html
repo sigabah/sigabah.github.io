@@ -3,103 +3,155 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#14532d">
+<meta name="theme-color" content="#1d2d3e">
 <title>SiGabah — Pengering Gabah IoT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  :root { --bg:#f4f6f3; --card:#fff; --ink:#1b2a1f; --mute:#6b7a6f; --line:#dde3dc;
-          --on:#15803d; --off:#9ca3af; --warn:#b91c1c; --accent:#14532d; }
+  :root {
+    --shell:#1d2d3e; --shell2:#2a3f55; --bg:#f2f4f7; --card:#ffffff; --ink:#1d2d3e; --mute:#5b6b7d; --line:#e3e8ee;
+    --brand:#0a6ed1; --good:#188918; --bad:#bb0000; --warn:#e76500; --off:#a9b4be;
+    --c1:#e76500; --c2:#188918; --c3:#0a6ed1; --c4:#7d3cbf; --c5:#00a4a7; --c6:#c87b00;
+    --shadow:0 0 0 1px rgba(29,45,62,.06), 0 2px 6px rgba(29,45,62,.06);
+  }
   @media (prefers-color-scheme: dark) {
-    :root { --bg:#0f1511; --card:#18211b; --ink:#e7efe9; --mute:#93a397; --line:#2a352d; }
+    :root { --bg:#12191f; --card:#1b242d; --ink:#e6ebf0; --mute:#97a6b5; --line:#2b3742; --shadow:0 0 0 1px #ffffff10; }
   }
   * { box-sizing:border-box; }
-  body { margin:0; font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
-  header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
-  header h1 { font-size:17px; margin:0; }
-  #clock { font-size:22px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:2px; }
-  #clock small { font-size:12px; font-weight:400; opacity:.8; display:block; }
-  #lastData { font-size:12px; opacity:.85; margin-top:4px; }
-  #online { font-size:13px; padding:3px 10px; border-radius:99px; background:#0003; }
-  main { max-width:900px; margin:0 auto; padding:16px; display:grid; gap:12px; }
-  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
-  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
-  .metric .v { font-size:26px; font-weight:650; font-variant-numeric:tabular-nums; }
-  .metric .l { color:var(--mute); font-size:13px; }
-  h2 { font-size:14px; margin:0 0 10px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
-  .row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-top:1px solid var(--line); }
-  .row:first-of-type { border-top:0; }
-  .tag { font-size:12px; padding:2px 8px; border-radius:99px; background:var(--off); color:#fff; margin-left:6px; }
-  .tag.on { background:var(--on); }
-  button { font:inherit; border:0; border-radius:10px; padding:10px 16px; cursor:pointer; background:var(--line); color:var(--ink); min-width:78px; }
-  button.on { background:var(--on); color:#fff; }
-  button:disabled { opacity:.4; cursor:not-allowed; }
-  button.big { width:100%; padding:14px; font-weight:600; }
-  button.lock { background:var(--warn); color:#fff; }
-  .arm { outline:3px solid #f59e0b; outline-offset:2px; }
-  .sw { width:56px; min-width:56px; height:32px; padding:0; border-radius:99px; background:var(--off); position:relative; transition:background .2s; }
-  .sw::after { content:""; position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0004; transition:left .2s; }
-  .sw.on { background:var(--on); }
-  .sw.on::after { left:27px; }
-  .sw:disabled { opacity:.35; }
+  html, body { margin:0; }
+  body { font:14px/1.45 Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
+
+  /* Shell bar */
+  .shell { background:linear-gradient(90deg,var(--shell),var(--shell2)); color:#fff; padding:12px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+  .brand { display:flex; align-items:center; gap:10px; }
+  .logo { width:34px; height:34px; border-radius:8px; background:#f0ab00; display:grid; place-items:center; font-weight:700; color:var(--shell); font-size:16px; }
+  .brand h1 { font-size:17px; margin:0; font-weight:600; letter-spacing:.01em; }
+  .brand .sub { font-size:12px; opacity:.7; }
+  .spacer { flex:1; }
+  #clock { text-align:right; font-variant-numeric:tabular-nums; }
+  #clock b { font-size:20px; font-weight:600; display:block; line-height:1.1; }
+  #clock span { font-size:12px; opacity:.75; }
+  .pill { display:inline-flex; align-items:center; gap:6px; font-size:12px; padding:5px 10px; border-radius:99px; background:#ffffff1a; white-space:nowrap; }
+  .dot { width:8px; height:8px; border-radius:50%; background:var(--off); }
+  .pill.on .dot { background:#3fd13f; box-shadow:0 0 0 3px #3fd13f33; }
+  #lastData { font-size:11px; opacity:.7; margin-top:3px; text-align:right; }
+  #btnLogout { background:transparent; color:#fff; border:1px solid #ffffff40; padding:6px 12px; border-radius:6px; font:inherit; font-size:12px; cursor:pointer; }
+
+  main { max-width:1400px; margin:0 auto; padding:16px 20px 32px; display:grid; gap:16px; }
+  .card { background:var(--card); border-radius:10px; box-shadow:var(--shadow); padding:16px; min-width:0; }
+  .card h2 { font-size:13px; font-weight:600; margin:0 0 12px; color:var(--ink); display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .card h2 small { font-weight:400; color:var(--mute); font-size:12px; }
+
+  /* KPI tiles */
+  .kpis { display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:16px; }
+  .kpi { position:relative; overflow:hidden; padding:14px 16px 12px; }
+  .kpi::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent,var(--brand)); }
+  .kpi .l { font-size:12px; color:var(--mute); font-weight:500; }
+  .kpi .v { font-size:30px; font-weight:600; font-variant-numeric:tabular-nums; line-height:1.15; margin-top:4px; }
+  .kpi .v u { text-decoration:none; font-size:14px; font-weight:500; color:var(--mute); margin-left:3px; }
+  .kpi .mm { font-size:11px; color:var(--mute); margin-top:6px; font-variant-numeric:tabular-nums; }
+
+  /* Layout */
+  .row2 { display:grid; grid-template-columns:minmax(280px,360px) 1fr; gap:16px; align-items:start; }
+  .charts { display:grid; grid-template-columns:repeat(auto-fit,minmax(min(100%,460px),1fr)); gap:16px; }
+  @media (max-width:860px) { .row2 { grid-template-columns:1fr; } }
+
+  /* Controls */
+  .safety { width:100%; border:0; border-radius:8px; padding:14px; font:inherit; font-weight:600; cursor:pointer; color:#fff; background:var(--bad); display:flex; align-items:center; justify-content:center; gap:8px; }
+  .safety.unlocked { background:var(--good); }
+  .arm { outline:3px solid #f0ab00; outline-offset:2px; }
+  .hint { font-size:12px; color:var(--mute); margin:8px 0 0; }
+  #lockHint { font-size:12px; color:var(--bad); background:#bb00000f; border-radius:6px; padding:8px 10px; margin:12px 0 4px; }
+  .ctl { display:flex; align-items:center; justify-content:space-between; padding:11px 0; border-top:1px solid var(--line); gap:10px; }
+  .ctl:first-of-type { border-top:0; }
+  .ctl .name { font-weight:500; }
+  .ctl .state { font-size:11px; padding:2px 8px; border-radius:99px; background:var(--line); color:var(--mute); margin-left:8px; font-weight:600; }
+  .ctl .state.on { background:#18891822; color:var(--good); }
   .right { display:flex; align-items:center; gap:10px; }
-  .modeLbl { font-weight:600; min-width:64px; text-align:right; }
-  #lockHint { color:var(--warn); font-size:13px; margin:0 0 6px; }
-  input { font:inherit; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:var(--card); color:var(--ink); }
-  .note { color:var(--mute); font-size:13px; }
-  #login { max-width:360px; margin:40px auto; }
+  .modeLbl { font-size:12px; font-weight:600; color:var(--mute); }
+  .sw { width:48px; min-width:48px; height:26px; padding:0; border:0; border-radius:99px; background:var(--off); position:relative; cursor:pointer; transition:background .2s; }
+  .sw::after { content:""; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 2px #0005; transition:left .2s; }
+  .sw.on { background:var(--brand); }
+  .sw.on::after { left:25px; }
+  .sw:disabled { opacity:.35; cursor:not-allowed; }
+
+  /* Charts */
+  .seg { display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
+  .seg button { border:0; background:transparent; color:var(--mute); font:inherit; font-size:12px; padding:5px 10px; cursor:pointer; }
+  .seg button.on { background:var(--brand); color:#fff; }
+  .chartBox { position:relative; height:260px; }
+  .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+  .toolbar h2 { margin:0; }
+  .btn { border:1px solid var(--line); background:var(--card); color:var(--brand); border-radius:6px; padding:6px 12px; font:inherit; font-size:12px; font-weight:600; cursor:pointer; }
+  .empty { position:absolute; inset:0; display:grid; place-items:center; color:var(--mute); font-size:13px; pointer-events:none; }
+
+  /* Login */
+  #login { max-width:380px; margin:12vh auto; padding:28px; }
+  #login h2 { font-size:18px; margin:0 0 4px; }
+  #login p { color:var(--mute); margin:0 0 18px; font-size:13px; }
+  #pass { font:inherit; font-size:20px; letter-spacing:.3em; text-align:center; width:100%; padding:12px; border:1px solid var(--line); border-radius:8px; background:var(--card); color:var(--ink); margin-bottom:12px; }
+  #btnLogin { width:100%; border:0; border-radius:8px; padding:12px; font:inherit; font-weight:600; background:var(--brand); color:#fff; cursor:pointer; }
+  #loginMsg { color:var(--bad); font-size:13px; min-height:18px; margin-top:10px; }
   #app { display:none; }
-  canvas { width:100%!important; height:220px!important; }
 </style>
 </head>
 <body>
-<header><div><h1>SiGabah</h1><div id="clock">-</div></div><div style="text-align:right"><span id="online">-</span><div id="lastData"></div></div></header>
+<div class="shell">
+  <div class="brand"><div class="logo">Si</div><div><h1>SiGabah</h1><div class="sub">Pengering Gabah PV–IoT · Sumatera Selatan</div></div></div>
+  <div class="spacer"></div>
+  <div id="clock"><b>--.--.--</b><span>-</span></div>
+  <div><span class="pill" id="online"><span class="dot"></span><span id="onlineTxt">Alat offline</span></span><div id="lastData"></div></div>
+  <button id="btnLogout" style="display:none">Keluar</button>
+</div>
 
 <div id="login" class="card">
-  <h2>Masukkan PIN</h2>
-  <input id="pass" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password">
-  <button class="big on" id="btnLogin">Masuk</button>
-  <p class="note" id="loginMsg"></p>
+  <h2>Masuk ke SiGabah</h2>
+  <p>Masukkan PIN untuk memantau dan mengontrol pengering.</p>
+  <input id="pass" type="password" inputmode="numeric" placeholder="••••••••" autocomplete="current-password">
+  <button id="btnLogin">Masuk</button>
+  <div id="loginMsg"></div>
 </div>
 
 <main id="app">
-  <section class="card">
-    <div class="grid">
-      <div class="metric"><div class="v" id="m_suhu">-</div><div class="l">Suhu (°C)</div></div>
-      <div class="metric"><div class="v" id="m_rh">-</div><div class="l">RH udara (%)</div></div>
-      <div class="metric"><div class="v" id="m_gabah">-</div><div class="l">Kelembapan gabah (%)</div></div>
-      <div class="metric"><div class="v" id="m_v">-</div><div class="l">Tegangan (V)</div></div>
-      <div class="metric"><div class="v" id="m_a">-</div><div class="l">Arus (A)</div></div>
-      <div class="metric"><div class="v" id="m_w">-</div><div class="l">Daya (W)</div></div>
-      <div class="metric"><div class="v" id="m_wh">-</div><div class="l">Energi (Wh)</div></div>
+  <section class="kpis">
+    <div class="card kpi" style="--accent:var(--c1)"><div class="l">Suhu ruang pengering</div><div class="v"><span id="m_suhu">-</span><u>°C</u></div><div class="mm" id="mm_suhu">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c2)"><div class="l">Kelembapan gabah</div><div class="v"><span id="m_gabah">-</span><u>%</u></div><div class="mm" id="mm_gabah">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c3)"><div class="l">RH udara</div><div class="v"><span id="m_rh">-</span><u>%</u></div><div class="mm" id="mm_rh">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c4)"><div class="l">Daya</div><div class="v"><span id="m_w">-</span><u>W</u></div><div class="mm" id="mm_w">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c5)"><div class="l">Tegangan · Arus</div><div class="v"><span id="m_v">-</span><u>V</u> <span id="m_a" style="font-size:20px">-</span><u>A</u></div><div class="mm" id="mm_v">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c6)"><div class="l">Energi terpakai</div><div class="v"><span id="m_wh">-</span><u>Wh</u></div><div class="mm">sejak ESP32 menyala</div></div>
+  </section>
+
+  <section class="row2">
+    <div class="card">
+      <h2>Kontrol alat <small>perintah → relay ±2 detik</small></h2>
+      <button class="safety" id="btnSafety">-</button>
+      <p id="lockHint">🔒 Heater terkunci. Tekan UNLOCK dulu supaya PTC dan Mode bisa diatur.</p>
+      <div class="ctl"><span class="name">Mode AUTO</span><span class="right"><span class="modeLbl" id="modeLbl">MANUAL</span><button class="sw" id="btnMode" aria-label="Mode AUTO"></button></span></div>
+      <div class="ctl"><span><span class="name">Blower</span><span class="state" id="t_blower">-</span></span><button class="sw" data-k="blower" aria-label="Blower"></button></div>
+      <div class="ctl"><span><span class="name">Heater PTC 1</span><span class="state" id="t_ptc1">-</span></span><button class="sw" data-k="ptc1" aria-label="PTC 1"></button></div>
+      <div class="ctl"><span><span class="name">Heater PTC 2</span><span class="state" id="t_ptc2">-</span></span><button class="sw" data-k="ptc2" aria-label="PTC 2"></button></div>
+      <div class="ctl"><span><span class="name">Heater PTC 3</span><span class="state" id="t_ptc3">-</span></span><button class="sw" data-k="ptc3" aria-label="PTC 3"></button></div>
+      <div class="ctl"><span><span class="name">Heater PTC 4</span><span class="state" id="t_ptc4">-</span></span><button class="sw" data-k="ptc4" aria-label="PTC 4"></button></div>
+      <p class="hint">Switch = perintah. Label ON/OFF = keadaan relay sebenarnya. Heater hanya menyala kalau blower ON dan suhu &lt; 45 °C. Setiap ESP32 restart, heater otomatis terkunci.</p>
+    </div>
+
+    <div class="card">
+      <div class="toolbar">
+        <h2>Suhu &amp; kelembapan</h2>
+        <span class="right">
+          <span class="seg" id="range"><button data-h="1">1 jam</button><button data-h="6">6 jam</button><button data-h="24" class="on">24 jam</button></span>
+          <button class="btn" id="btnCsv">⬇ CSV</button>
+        </span>
+      </div>
+      <div class="chartBox" style="height:320px;margin-top:12px"><canvas id="chT"></canvas><div class="empty" id="e_T">Belum ada data dari alat</div></div>
     </div>
   </section>
 
-  <section class="card">
-    <h2>Keselamatan</h2>
-    <button class="big" id="btnSafety">-</button>
-    <p class="note">Setiap ESP32 restart, heater otomatis terkunci (LOCK). Blower tetap jalan.</p>
+  <section class="charts">
+    <div class="card"><h2>Daya <small>W</small></h2><div class="chartBox"><canvas id="chW"></canvas><div class="empty" id="e_W">Belum ada data</div></div></div>
+    <div class="card"><h2>Tegangan &amp; arus <small>V · A</small></h2><div class="chartBox"><canvas id="chVA"></canvas><div class="empty" id="e_VA">Belum ada data</div></div></div>
   </section>
-
-  <section class="card">
-    <h2>Kontrol</h2>
-    <p id="lockHint">🔒 Heater terkunci. Tekan tombol UNLOCK di atas dulu supaya PTC dan Mode bisa diatur.</p>
-    <div class="row"><span>Mode</span><span class="right"><span class="modeLbl" id="modeLbl">MANUAL</span><button class="sw" id="btnMode" aria-label="Mode AUTO"></button></span></div>
-    <div class="row"><span>Blower <span class="tag" id="t_blower">-</span></span><button class="sw" data-k="blower" aria-label="blower"></button></div>
-    <div class="row"><span>PTC 1 <span class="tag" id="t_ptc1">-</span></span><button class="sw" data-k="ptc1" aria-label="ptc1"></button></div>
-    <div class="row"><span>PTC 2 <span class="tag" id="t_ptc2">-</span></span><button class="sw" data-k="ptc2" aria-label="ptc2"></button></div>
-    <div class="row"><span>PTC 3 <span class="tag" id="t_ptc3">-</span></span><button class="sw" data-k="ptc3" aria-label="ptc3"></button></div>
-    <div class="row"><span>PTC 4 <span class="tag" id="t_ptc4">-</span></span><button class="sw" data-k="ptc4" aria-label="ptc4"></button></div>
-    <p class="note">Tombol = perintah. Label hijau/abu = keadaan relay sebenarnya dari alat.
-      Heater hanya menyala kalau blower ON dan suhu &lt; 45 °C.</p>
-  </section>
-
-  <section class="card">
-    <h2>Riwayat (3 jam terakhir, data per menit)</h2>
-    <canvas id="chT"></canvas>
-    <canvas id="chP"></canvas>
-    <div class="row"><span class="note">Unduh semua riwayat</span><button id="btnCsv">CSV</button></div>
-  </section>
-
-  <button id="btnLogout">Keluar</button>
 </main>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
@@ -110,27 +162,34 @@ const SUPABASE_URL = "https://iltdxkjjqphycodazvut.supabase.co";
 const SUPABASE_KEY = "sb_publishable_QXpxb2AAmIfE94PTmrNMqg_LzPP9F0Z";
 // Akun alat tetap; yang diketik pengguna hanya PIN (= password akun ini)
 const LOGIN_EMAIL = "alat@pengering-gabah.app";
+const TZ = "Asia/Jakarta";
+const HOUR = 3600e3;
 
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
-let control = {}, status = {};
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+let control = {}, status = {}, rows = [], rangeH = 24;
 
+// ---------- Login ----------
 $("pass").onkeydown = e => { if (e.key === "Enter") $("btnLogin").click(); };
 $("btnLogin").onclick = async () => {
-  $("loginMsg").textContent = "Memproses...";
+  $("loginMsg").textContent = "";
   const { error } = await sb.auth.signInWithPassword({ email: LOGIN_EMAIL, password: $("pass").value.trim() });
-  $("loginMsg").textContent = error ? "PIN salah" : "";
+  if (error) $("loginMsg").textContent = "PIN salah";
   $("pass").value = "";
 };
 $("btnLogout").onclick = () => sb.auth.signOut();
-
 sb.auth.onAuthStateChange((_e, session) => {
   $("login").style.display = session ? "none" : "block";
   $("app").style.display = session ? "grid" : "none";
+  $("btnLogout").style.display = session ? "inline-block" : "none";
   if (session) setTimeout(start, 0);
 });
 
-function fmt(v, d) { return (v === null || v === undefined || isNaN(v)) ? "-" : Number(v).toFixed(d); }
+// ---------- Helpers ----------
+const fmt = (v, d) => (v === null || v === undefined || isNaN(v)) ? "-" : Number(v).toLocaleString("id-ID", { minimumFractionDigits: d, maximumFractionDigits: d });
+const hhmm = ms => new Date(ms).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", timeZone: TZ });
+
 async function setControl(patch) {
   const { error } = await sb.from("control").update(patch).eq("id", 1);
   if (error) alert("Gagal mengirim perintah: " + error.message);
@@ -141,103 +200,178 @@ async function loadControl() {
   if (data) { control = data; render(); }
 }
 
+// ---------- Status (KPI) ----------
 function showStatus(d) {
   status = d || {};
   $("m_suhu").textContent = fmt(status.suhu1, 1);
   $("m_rh").textContent = fmt(status.kelembapan_udara, 0);
   $("m_gabah").textContent = fmt(status.soil_percent, 1);
-  $("m_v").textContent = fmt(status.voltage, 2);
+  $("m_v").textContent = fmt(status.voltage, 1);
   $("m_a").textContent = fmt(status.current, 2);
   $("m_w").textContent = fmt(status.power, 1);
-  $("m_wh").textContent = fmt(status.energy_wh, 2);
+  $("m_wh").textContent = fmt(status.energy_wh, 1);
   for (const k of ["ptc1","ptc2","ptc3","ptc4","blower"]) {
     const on = status[k] == 1;
     $("t_" + k).textContent = on ? "ON" : "OFF";
-    $("t_" + k).className = "tag" + (on ? " on" : "");
+    $("t_" + k).className = "state" + (on ? " on" : "");
   }
   updateOnline();
 }
-
-let started = false, chT, chP;
-const N = 180;
-function addPoint(d) {
-  const t = new Date(d.ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
-  const push = (ch, vals) => {
-    ch.data.labels.push(t);
-    vals.forEach((v, i) => ch.data.datasets[i].data.push(v));
-    if (ch.data.labels.length > N) { ch.data.labels.shift(); ch.data.datasets.forEach(x => x.data.shift()); }
-    ch.update();
-  };
-  push(chT, [d.suhu1, d.soil_percent, d.kelembapan_udara]);
-  push(chP, [d.power, d.voltage, d.current]);
-}
-
-async function start() {
-  if (started) return; started = true;
-
-  const mk = (el, sets) => new Chart(el, {
-    type: "line",
-    data: { labels: [], datasets: sets.map(([label, color]) => ({ label, data: [], borderColor: color, pointRadius: 0, borderWidth: 2 })) },
-    options: { animation: false, responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
-               scales: { x: { ticks: { maxTicksLimit: 6 } } } }
-  });
-  chT = mk($("chT"), [["Suhu °C", "#c2410c"], ["Gabah %", "#15803d"], ["RH %", "#2563eb"]]);
-  chP = mk($("chP"), [["Daya W", "#7c3aed"], ["Tegangan V", "#0891b2"], ["Arus A", "#ca8a04"]]);
-
-  loadControl();
-  const st = await sb.from("status").select("*").eq("id", 1).single();
-  showStatus(st.data);
-  const lg = await sb.from("log").select("*").order("ts", { ascending: false }).limit(N);
-  (lg.data || []).reverse().forEach(addPoint);
-
-  // Perubahan langsung (realtime)
-  sb.channel("alat")
-    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "status" }, p => showStatus(p.new))
-    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "control" }, p => { control = p.new; render(); })
-    .on("postgres_changes", { event: "INSERT", schema: "public", table: "log" }, p => addPoint(p.new))
-    .subscribe();
-
-  // Cadangan kalau realtime terputus
-  setInterval(async () => {
-    const r = await sb.from("status").select("*").eq("id", 1).single();
-    if (r.data) showStatus(r.data);
-  }, 10000);
-}
-
 function updateOnline() {
   const age = (Date.now() - new Date(status.ts || 0).getTime()) / 1000;
   const on = status.ts && age < 15;
-  $("online").textContent = on ? "● Alat online" : "○ Alat offline";
+  $("online").className = "pill" + (on ? " on" : "");
+  $("onlineTxt").textContent = on ? "Alat online" : "Alat offline";
 }
 setInterval(updateOnline, 3000);
 
-// Jam live (WIB) + waktu data terakhir dari alat
+// Jam live WIB
 function tick() {
   const now = new Date();
-  $("clock").innerHTML = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" }) +
-    " WIB<small>" + now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }) + "</small>";
+  $("clock").innerHTML = "<b>" + now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: TZ }) + " WIB</b><span>" +
+    now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: TZ }) + "</span>";
   if (status.ts) {
     const age = Math.max(0, Math.round((now - new Date(status.ts)) / 1000));
-    const t = new Date(status.ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" });
-    $("lastData").textContent = "Data terakhir " + t + (age < 120 ? " (" + age + " dtk lalu)" : "");
+    $("lastData").textContent = "Data terakhir " + new Date(status.ts).toLocaleTimeString("id-ID", { timeZone: TZ }) + (age < 120 ? " · " + age + " dtk lalu" : "");
   }
 }
 tick(); setInterval(tick, 1000);
 
+// ---------- Grafik ----------
+Chart.defaults.font.family = "Inter, system-ui, sans-serif";
+Chart.defaults.font.size = 11;
+Chart.defaults.color = css("--mute");
+
+function makeChart(el, series, axes) {
+  const scales = {
+    x: { type: "linear", grid: { display: false }, border: { color: css("--line") },
+         ticks: { maxTicksLimit: 8, callback: v => hhmm(v) } },
+  };
+  axes.forEach((a, i) => scales[a.id] = {
+    position: i ? "right" : "left", beginAtZero: a.zero ?? false,
+    grid: { display: i === 0, color: css("--line") }, border: { display: false },
+    title: { display: true, text: a.title, color: css("--mute") },
+  });
+  return new Chart(el, {
+    type: "line",
+    data: { datasets: series.map(s => ({
+      label: s.label, yAxisID: s.axis, borderColor: s.color, backgroundColor: s.fill ? s.color + "1f" : s.color,
+      fill: !!s.fill, data: [], borderWidth: 2, pointRadius: 0, pointHoverRadius: 4, tension: .25, spanGaps: 5 * 60e3,
+    })) },
+    options: {
+      animation: false, responsive: true, maintainAspectRatio: false, parsing: false, normalized: true,
+      interaction: { mode: "index", intersect: false },
+      plugins: {
+        legend: { position: "top", align: "end", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "rectRounded" } },
+        tooltip: { backgroundColor: "#1d2d3e", padding: 10, cornerRadius: 6,
+                   callbacks: { title: it => new Date(it[0].parsed.x).toLocaleString("id-ID", { timeZone: TZ }) } },
+        decimation: { enabled: true, algorithm: "lttb", samples: 400 },
+      },
+      scales,
+    },
+  });
+}
+
+let chT, chW, chVA;
+function initCharts() {
+  chT = makeChart($("chT"), [
+    { label: "Suhu °C", color: css("--c1"), axis: "y", fill: true, key: "suhu1" },
+    { label: "Kelembapan gabah %", color: css("--c2"), axis: "y1", key: "soil_percent" },
+    { label: "RH udara %", color: css("--c3"), axis: "y1", key: "kelembapan_udara" },
+  ], [{ id: "y", title: "°C" }, { id: "y1", title: "%", zero: true }]);
+  chW = makeChart($("chW"), [{ label: "Daya W", color: css("--c4"), axis: "y", fill: true }], [{ id: "y", title: "W", zero: true }]);
+  chVA = makeChart($("chVA"), [
+    { label: "Tegangan V", color: css("--c5"), axis: "y" },
+    { label: "Arus A", color: css("--c6"), axis: "y1" },
+  ], [{ id: "y", title: "V" }, { id: "y1", title: "A", zero: true }]);
+}
+
+const MAP = [
+  [() => chT, ["suhu1", "soil_percent", "kelembapan_udara"]],
+  [() => chW, ["power"]],
+  [() => chVA, ["voltage", "current"]],
+];
+
+function redraw() {
+  const now = Date.now(), min = now - rangeH * HOUR;
+  rows = rows.filter(r => r.t >= now - 24 * HOUR);
+  const view = rows.filter(r => r.t >= min);
+  for (const [get, keys] of MAP) {
+    const ch = get();
+    keys.forEach((k, i) => ch.data.datasets[i].data = view.filter(r => r[k] !== null && r[k] !== undefined).map(r => ({ x: r.t, y: Number(r[k]) })));
+    ch.options.scales.x.min = min;
+    ch.options.scales.x.max = now;
+    ch.update("none");
+  }
+  ["T", "W", "VA"].forEach(id => $("e_" + id).style.display = view.length ? "none" : "grid");
+
+  // Min / maks 24 jam di KPI
+  const mm = (k, d) => {
+    const v = rows.map(r => r[k]).filter(x => x !== null && x !== undefined).map(Number);
+    return v.length ? "24 jam: min " + fmt(Math.min(...v), d) + " · maks " + fmt(Math.max(...v), d) : "24 jam: -";
+  };
+  $("mm_suhu").textContent = mm("suhu1", 1);
+  $("mm_gabah").textContent = mm("soil_percent", 1);
+  $("mm_rh").textContent = mm("kelembapan_udara", 0);
+  $("mm_w").textContent = mm("power", 1);
+  $("mm_v").textContent = mm("voltage", 1);
+}
+
+document.querySelectorAll("#range button").forEach(b => b.onclick = () => {
+  rangeH = Number(b.dataset.h);
+  document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x === b));
+  redraw();
+});
+
+async function load24h() {
+  const since = new Date(Date.now() - 24 * HOUR).toISOString();
+  const out = [];
+  for (let from = 0; ; from += 1000) {   // 1 data/menit -> ±1440 baris
+    const { data, error } = await sb.from("log").select("ts,suhu1,kelembapan_udara,soil_percent,voltage,current,power")
+      .gte("ts", since).order("ts").range(from, from + 999);
+    if (error || !data) break;
+    out.push(...data);
+    if (data.length < 1000) break;
+  }
+  rows = out.map(d => ({ ...d, t: new Date(d.ts).getTime() }));
+  redraw();
+}
+
+// ---------- Mulai ----------
+let started = false;
+async function start() {
+  if (started) return; started = true;
+  initCharts();
+  loadControl();
+  const st = await sb.from("status").select("*").eq("id", 1).single();
+  showStatus(st.data);
+  await load24h();
+
+  sb.channel("alat")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "status" }, p => showStatus(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "control" }, p => { control = p.new; render(); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "log" }, p => { rows.push({ ...p.new, t: new Date(p.new.ts).getTime() }); redraw(); })
+    .subscribe();
+
+  setInterval(async () => {   // cadangan kalau realtime terputus
+    const r = await sb.from("status").select("*").eq("id", 1).single();
+    if (r.data) showStatus(r.data);
+  }, 10000);
+  setInterval(redraw, 60000);  // geser jendela waktu
+}
+
+// ---------- Kontrol ----------
 function render() {
   const locked = control.safety !== "UNLOCK";
   const auto = control.mode === "AUTO";
-
   const bs = $("btnSafety");
-  bs.textContent = locked ? "TERKUNCI — tekan untuk UNLOCK heater" : "Heater AKTIF — tekan untuk LOCK";
-  bs.className = "big " + (locked ? "" : "lock");
-
+  if (!bs.classList.contains("arm")) bs.textContent = locked ? "🔒 TERKUNCI — tekan untuk UNLOCK heater" : "🔓 Heater AKTIF — tekan untuk LOCK";
+  bs.className = "safety" + (locked ? "" : " unlocked") + (bs.classList.contains("arm") ? " arm" : "");
   $("modeLbl").textContent = auto ? "AUTO" : "MANUAL";
   $("btnMode").className = "sw" + (auto ? " on" : "");
   $("btnMode").disabled = locked;
-  $("lockHint").textContent = "🔒 Heater terkunci. Tekan tombol UNLOCK di atas dulu supaya PTC dan Mode bisa diatur.";
+  $("lockHint").textContent = "🔒 Heater terkunci. Tekan UNLOCK dulu supaya PTC dan Mode bisa diatur.";
   $("lockHint").style.display = locked ? "block" : "none";
-
   document.querySelectorAll("button[data-k]").forEach(b => {
     const k = b.dataset.k, on = !!control[k];
     b.className = "sw" + (on ? " on" : "");
@@ -248,9 +382,8 @@ function render() {
 // Konfirmasi di halaman (tekan 2x), karena confirm() sering diblokir di HP/aplikasi
 let armed = null, armTimer = null;
 function confirmTap(key, btn, msg) {
-  if (armed === key) { armed = null; clearTimeout(armTimer); return true; }
+  if (armed === key) { armed = null; clearTimeout(armTimer); btn.classList.remove("arm"); return true; }
   armed = key;
-  const old = btn.textContent;
   if (msg) btn.textContent = msg;
   btn.classList.add("arm");
   clearTimeout(armTimer);
@@ -259,29 +392,33 @@ function confirmTap(key, btn, msg) {
 }
 $("btnSafety").onclick = () => {
   const locked = control.safety !== "UNLOCK";
-  if (locked && !confirmTap("unlock", $("btnSafety"), "Yakin? Tekan sekali lagi untuk UNLOCK")) return;
+  if (locked && !confirmTap("unlock", $("btnSafety"), "⚠ Yakin? Tekan sekali lagi untuk UNLOCK")) return;
   setControl({ safety: locked ? "UNLOCK" : "LOCK" });
 };
 $("btnMode").onclick = () => setControl({ mode: control.mode === "AUTO" ? "MANUAL" : "AUTO" });
-document.querySelectorAll("button[data-k]").forEach(b =>
-  b.onclick = () => {
-    const k = b.dataset.k;
-    if (k === "blower" && control.blower && !confirmTap("blower", b)) { $("lockHint").style.display = "block"; $("lockHint").textContent = "Geser sekali lagi dalam 4 detik untuk mematikan blower (heater ikut mati)."; return; }
-    setControl({ [k]: !control[k] });
-  });
+document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
+  const k = b.dataset.k;
+  if (k === "blower" && control.blower && !confirmTap("blower", b)) {
+    $("lockHint").style.display = "block";
+    $("lockHint").textContent = "Geser sekali lagi dalam 4 detik untuk mematikan blower (heater ikut mati).";
+    return;
+  }
+  setControl({ [k]: !control[k] });
+});
 
+// ---------- CSV (semua riwayat) ----------
 $("btnCsv").onclick = async () => {
   const cols = ["ts","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
-  const rows = [cols.join(",")];
-  for (let from = 0; ; from += 1000) {   // ambil per 1000 baris
+  const out = [cols.join(",")];
+  for (let from = 0; ; from += 1000) {
     const { data, error } = await sb.from("log").select(cols.join(",")).order("ts").range(from, from + 999);
     if (error) { alert(error.message); return; }
-    data.forEach(d => rows.push(cols.map(k => d[k] ?? "").join(",")));
+    data.forEach(d => out.push(cols.map(k => d[k] ?? "").join(",")));
     if (data.length < 1000) break;
   }
   const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
-  a.download = "log_pengering_gabah_" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.href = URL.createObjectURL(new Blob([out.join("\n")], { type: "text/csv" }));
+  a.download = "log_sigabah_" + new Date().toISOString().slice(0, 10) + ".csv";
   a.click();
 };
 </script>
