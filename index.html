@@ -261,7 +261,7 @@ function makeChart(el, series, axes) {
                   callback: (v, i, all) => (viewMode === "day" && i === all.length - 1 && v - wibMidnight(v - 1) === 24 * HOUR) ? "24.00" : hhmm(v) } },
   };
   axes.forEach((a, i) => scales[a.id] = {
-    position: i ? "right" : "left", beginAtZero: a.zero ?? false,
+    position: i ? "right" : "left", beginAtZero: true, min: a.min ?? 0, max: a.max, suggestedMax: a.smax,
     grid: { display: i === 0, color: css("--line") }, border: { display: false },
     title: { display: true, text: a.title, color: css("--mute") },
   });
@@ -292,12 +292,12 @@ function initCharts() {
     { label: "Suhu °C", color: css("--c1"), axis: "y", fill: true, key: "suhu1" },
     { label: "Kelembapan gabah %", color: css("--c2"), axis: "y1", key: "soil_percent" },
     { label: "RH udara %", color: css("--c3"), axis: "y1", key: "kelembapan_udara" },
-  ], [{ id: "y", title: "°C" }, { id: "y1", title: "%", zero: true }]);
-  chW = makeChart($("chW"), [{ label: "Daya W", color: css("--c4"), axis: "y", fill: true }], [{ id: "y", title: "W", zero: true }]);
+  ], [{ id: "y", title: "°C", max: 100 }, { id: "y1", title: "%", max: 100 }]);
+  chW = makeChart($("chW"), [{ label: "Daya W", color: css("--c4"), axis: "y", fill: true }], [{ id: "y", title: "W", smax: 100 }]   // 0–100 W, otomatis naik kalau daya lebih tinggi);
   chVA = makeChart($("chVA"), [
     { label: "Tegangan V", color: css("--c5"), axis: "y" },
     { label: "Arus A", color: css("--c6"), axis: "y1" },
-  ], [{ id: "y", title: "V" }, { id: "y1", title: "A", zero: true }]);
+  ], [{ id: "y", title: "V", max: 50 }, { id: "y1", title: "A", max: 50 }]);
 }
 
 const MAP = [
