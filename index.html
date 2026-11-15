@@ -15,6 +15,9 @@
   body { margin:0; font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
   header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
   header h1 { font-size:17px; margin:0; }
+  #clock { font-size:22px; font-weight:650; font-variant-numeric:tabular-nums; margin-top:2px; }
+  #clock small { font-size:12px; font-weight:400; opacity:.8; display:block; }
+  #lastData { font-size:12px; opacity:.85; margin-top:4px; }
   #online { font-size:13px; padding:3px 10px; border-radius:99px; background:#0003; }
   main { max-width:900px; margin:0 auto; padding:16px; display:grid; gap:12px; }
   .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
@@ -48,7 +51,7 @@
 </style>
 </head>
 <body>
-<header><h1>SiGabah</h1><span id="online">-</span></header>
+<header><div><h1>SiGabah</h1><div id="clock">-</div></div><div style="text-align:right"><span id="online">-</span><div id="lastData"></div></div></header>
 
 <div id="login" class="card">
   <h2>Masukkan PIN</h2>
@@ -207,6 +210,19 @@ function updateOnline() {
   $("online").textContent = on ? "● Alat online" : "○ Alat offline";
 }
 setInterval(updateOnline, 3000);
+
+// Jam live (WIB) + waktu data terakhir dari alat
+function tick() {
+  const now = new Date();
+  $("clock").innerHTML = now.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" }) +
+    " WIB<small>" + now.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric", timeZone: "Asia/Jakarta" }) + "</small>";
+  if (status.ts) {
+    const age = Math.max(0, Math.round((now - new Date(status.ts)) / 1000));
+    const t = new Date(status.ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit", timeZone: "Asia/Jakarta" });
+    $("lastData").textContent = "Data terakhir " + t + (age < 120 ? " (" + age + " dtk lalu)" : "");
+  }
+}
+tick(); setInterval(tick, 1000);
 
 function render() {
   const locked = control.safety !== "UNLOCK";
