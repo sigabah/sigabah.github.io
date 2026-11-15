@@ -113,6 +113,15 @@
   #btnLogin { width:100%; border:0; border-radius:8px; padding:12px; font:inherit; font-weight:600; background:var(--brand); color:#fff; cursor:pointer; }
   #loginMsg { color:var(--bad); font-size:13px; min-height:18px; margin-top:10px; }
   #app { display:none; }
+  /* Semua tombol melayang */
+  .safety, .btn, .seg, .sw, #btnLogin, #btnLogout, .pill { box-shadow:0 2px 4px rgba(61,11,20,.10), 0 8px 18px -6px rgba(61,11,20,.28); transition:transform .2s ease, box-shadow .2s ease, background .2s; }
+  .seg button { transition:background .2s; }
+  @media (hover:hover) {
+    .safety:hover, .btn:hover, .seg:hover, .sw:not(:disabled):hover, #btnLogin:hover, #btnLogout:hover { transform:translateY(-2px); box-shadow:0 4px 8px rgba(61,11,20,.12), 0 14px 26px -8px rgba(61,11,20,.36); }
+  }
+  .safety:active, .btn:active, .sw:not(:disabled):active, #btnLogin:active { transform:translateY(1px); box-shadow:0 1px 3px rgba(61,11,20,.2); }
+  .sw:disabled { box-shadow:none; }
+  .card { transform:translateY(-1px); }
 </style>
 </head>
 <body>
