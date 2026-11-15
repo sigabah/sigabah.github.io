@@ -264,7 +264,8 @@ function makeChart(el, series, axes) {
       plugins: {
         legend: { position: "top", align: "end", labels: { boxWidth: 10, boxHeight: 10, usePointStyle: true, pointStyle: "rectRounded" } },
         tooltip: { backgroundColor: "#1d2d3e", padding: 10, cornerRadius: 6,
-                   callbacks: { title: it => new Date(it[0].parsed.x).toLocaleString("id-ID", { timeZone: TZ }) } },
+                   callbacks: { title: it => new Date(it[0].parsed.x).toLocaleString("id-ID", { timeZone: TZ }),
+                               label: c => " " + c.dataset.label + ": " + fmt(c.parsed.y, 2) } },
         decimation: { enabled: true, algorithm: "lttb", samples: 400 },
       },
       scales,
