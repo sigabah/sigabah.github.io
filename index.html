@@ -293,7 +293,7 @@ function initCharts() {
     { label: "Kelembapan gabah %", color: css("--c2"), axis: "y1", key: "soil_percent" },
     { label: "RH udara %", color: css("--c3"), axis: "y1", key: "kelembapan_udara" },
   ], [{ id: "y", title: "°C", max: 100 }, { id: "y1", title: "%", max: 100 }]);
-  chW = makeChart($("chW"), [{ label: "Daya W", color: css("--c4"), axis: "y", fill: true }], [{ id: "y", title: "W", smax: 100 }]   // 0–100 W, otomatis naik kalau daya lebih tinggi);
+  chW = makeChart($("chW"), [{ label: "Daya W", color: css("--c4"), axis: "y", fill: true }], [{ id: "y", title: "W", smax: 100 }]);   // 0–100 W, otomatis naik kalau daya lebih tinggi
   chVA = makeChart($("chVA"), [
     { label: "Tegangan V", color: css("--c5"), axis: "y" },
     { label: "Arus A", color: css("--c6"), axis: "y1" },
