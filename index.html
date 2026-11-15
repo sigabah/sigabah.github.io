@@ -171,7 +171,7 @@
         <span class="right">
           <span class="seg" id="range"><button data-m="day" class="on">Harian 00–24</button><button data-m="24">24 jam terakhir</button><button data-m="6">6 jam</button><button data-m="1">1 jam</button></span>
           <input type="date" id="day" class="btn" title="Pilih tanggal">
-          <button class="btn" id="btnCsv">⬇ CSV</button>
+          <button class="btn" id="btnCsv">⬇ Excel</button>
         </span>
       </div>
       <div class="chartBox" style="height:320px;margin-top:12px"><canvas id="chT"></canvas><div class="empty" id="e_T">Belum ada data dari alat</div></div>
@@ -186,6 +186,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script>
 // Project Supabase "pengering-gabah" (kunci publik, aman ditaruh di sini)
 const SUPABASE_URL = "https://iltdxkjjqphycodazvut.supabase.co";
@@ -467,20 +468,35 @@ document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
   setControl({ [k]: !control[k] });
 });
 
-// ---------- CSV (semua riwayat) ----------
+// ---------- Excel .xlsx (semua riwayat) ----------
 $("btnCsv").onclick = async () => {
-  const cols = ["ts","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
-  const out = [cols.join(",")];
-  for (let from = 0; ; from += 1000) {
-    const { data, error } = await sb.from("log").select(cols.join(",")).order("ts").range(from, from + 999);
-    if (error) { alert(error.message); return; }
-    data.forEach(d => out.push(cols.map(k => d[k] ?? "").join(",")));
-    if (data.length < 1000) break;
-  }
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(new Blob([out.join("\n")], { type: "text/csv" }));
-  a.download = "log_sigabah_" + new Date().toISOString().slice(0, 10) + ".csv";
-  a.click();
+  const btn = $("btnCsv"); btn.textContent = "Menyiapkan…"; btn.disabled = true;
+  try {
+    const cols = ["ts","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
+    const all = [];
+    for (let from = 0; ; from += 1000) {
+      const { data, error } = await sb.from("log").select(cols.join(",")).order("ts").range(from, from + 999);
+      if (error) { alert(error.message); return; }
+      all.push(...data);
+      if (data.length < 1000) break;
+    }
+    // Waktu ditulis sebagai tanggal-jam WIB (Excel tidak menyimpan zona waktu)
+    const tzFix = ms => new Date(ms + WIB + new Date(ms).getTimezoneOffset() * 60e3);
+    const sheet = all.map(d => ({
+      "Waktu (WIB)": tzFix(new Date(d.ts).getTime()),
+      "Suhu (°C)": d.suhu1, "RH udara (%)": d.kelembapan_udara,
+      "Gabah raw (ADC)": d.soil_raw, "Kelembapan gabah (%)": d.soil_percent,
+      "Tegangan (V)": d.voltage, "Arus (A)": d.current, "Daya (W)": d.power, "Energi (Wh)": d.energy_wh,
+      "PTC1": d.ptc1, "PTC2": d.ptc2, "PTC3": d.ptc3, "PTC4": d.ptc4, "Blower": d.blower,
+      "Mode": d.mode, "Terkunci": d.startup_lock,
+    }));
+    const ws = XLSX.utils.json_to_sheet(sheet, { cellDates: true, dateNF: "dd/mm/yyyy hh:mm:ss" });
+    ws["!cols"] = [{ wch: 20 }, ...Array(15).fill({ wch: 13 })];
+    ws["!freeze"] = { xSplit: 0, ySplit: 1 };
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Log SiGabah");
+    XLSX.writeFile(wb, "SiGabah_log_" + wibDateStr(Date.now()) + ".xlsx");
+  } finally { btn.textContent = "⬇ Excel"; btn.disabled = false; }
 };
 </script>
 </body>
