@@ -31,6 +31,7 @@
   button:disabled { opacity:.4; cursor:not-allowed; }
   button.big { width:100%; padding:14px; font-weight:600; }
   button.lock { background:var(--warn); color:#fff; }
+  .arm { outline:3px solid #f59e0b; outline-offset:2px; }
   .sw { width:56px; min-width:56px; height:32px; padding:0; border-radius:99px; background:var(--off); position:relative; transition:background .2s; }
   .sw::after { content:""; position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0004; transition:left .2s; }
   .sw.on { background:var(--on); }
@@ -218,6 +219,7 @@ function render() {
   $("modeLbl").textContent = auto ? "AUTO" : "MANUAL";
   $("btnMode").className = "sw" + (auto ? " on" : "");
   $("btnMode").disabled = locked;
+  $("lockHint").textContent = "🔒 Heater terkunci. Tekan tombol UNLOCK di atas dulu supaya PTC dan Mode bisa diatur.";
   $("lockHint").style.display = locked ? "block" : "none";
 
   document.querySelectorAll("button[data-k]").forEach(b => {
@@ -227,16 +229,28 @@ function render() {
   });
 }
 
+// Konfirmasi di halaman (tekan 2x), karena confirm() sering diblokir di HP/aplikasi
+let armed = null, armTimer = null;
+function confirmTap(key, btn, msg) {
+  if (armed === key) { armed = null; clearTimeout(armTimer); return true; }
+  armed = key;
+  const old = btn.textContent;
+  if (msg) btn.textContent = msg;
+  btn.classList.add("arm");
+  clearTimeout(armTimer);
+  armTimer = setTimeout(() => { armed = null; btn.classList.remove("arm"); render(); }, 4000);
+  return false;
+}
 $("btnSafety").onclick = () => {
   const locked = control.safety !== "UNLOCK";
-  if (locked && !confirm("Buka kunci heater? Pastikan alat diawasi.")) return;
+  if (locked && !confirmTap("unlock", $("btnSafety"), "Yakin? Tekan sekali lagi untuk UNLOCK")) return;
   setControl({ safety: locked ? "UNLOCK" : "LOCK" });
 };
 $("btnMode").onclick = () => setControl({ mode: control.mode === "AUTO" ? "MANUAL" : "AUTO" });
 document.querySelectorAll("button[data-k]").forEach(b =>
   b.onclick = () => {
     const k = b.dataset.k;
-    if (k === "blower" && control.blower && !confirm("Matikan blower? Heater ikut mati.")) return;
+    if (k === "blower" && control.blower && !confirmTap("blower", b)) { $("lockHint").style.display = "block"; $("lockHint").textContent = "Geser sekali lagi dalam 4 detik untuk mematikan blower (heater ikut mati)."; return; }
     setControl({ [k]: !control[k] });
   });
 
