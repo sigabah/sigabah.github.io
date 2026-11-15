@@ -31,6 +31,14 @@
   button:disabled { opacity:.4; cursor:not-allowed; }
   button.big { width:100%; padding:14px; font-weight:600; }
   button.lock { background:var(--warn); color:#fff; }
+  .sw { width:56px; min-width:56px; height:32px; padding:0; border-radius:99px; background:var(--off); position:relative; transition:background .2s; }
+  .sw::after { content:""; position:absolute; top:3px; left:3px; width:26px; height:26px; border-radius:50%; background:#fff; box-shadow:0 1px 3px #0004; transition:left .2s; }
+  .sw.on { background:var(--on); }
+  .sw.on::after { left:27px; }
+  .sw:disabled { opacity:.35; }
+  .right { display:flex; align-items:center; gap:10px; }
+  .modeLbl { font-weight:600; min-width:64px; text-align:right; }
+  #lockHint { color:var(--warn); font-size:13px; margin:0 0 6px; }
   input { font:inherit; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:var(--card); color:var(--ink); }
   .note { color:var(--mute); font-size:13px; }
   #login { max-width:360px; margin:40px auto; }
@@ -69,12 +77,13 @@
 
   <section class="card">
     <h2>Kontrol</h2>
-    <div class="row"><span>Mode</span><button id="btnMode">-</button></div>
-    <div class="row"><span>Blower <span class="tag" id="t_blower">-</span></span><button data-k="blower">-</button></div>
-    <div class="row"><span>PTC 1 <span class="tag" id="t_ptc1">-</span></span><button data-k="ptc1">-</button></div>
-    <div class="row"><span>PTC 2 <span class="tag" id="t_ptc2">-</span></span><button data-k="ptc2">-</button></div>
-    <div class="row"><span>PTC 3 <span class="tag" id="t_ptc3">-</span></span><button data-k="ptc3">-</button></div>
-    <div class="row"><span>PTC 4 <span class="tag" id="t_ptc4">-</span></span><button data-k="ptc4">-</button></div>
+    <p id="lockHint">🔒 Heater terkunci. Tekan tombol UNLOCK di atas dulu supaya PTC dan Mode bisa diatur.</p>
+    <div class="row"><span>Mode</span><span class="right"><span class="modeLbl" id="modeLbl">MANUAL</span><button class="sw" id="btnMode" aria-label="Mode AUTO"></button></span></div>
+    <div class="row"><span>Blower <span class="tag" id="t_blower">-</span></span><button class="sw" data-k="blower" aria-label="blower"></button></div>
+    <div class="row"><span>PTC 1 <span class="tag" id="t_ptc1">-</span></span><button class="sw" data-k="ptc1" aria-label="ptc1"></button></div>
+    <div class="row"><span>PTC 2 <span class="tag" id="t_ptc2">-</span></span><button class="sw" data-k="ptc2" aria-label="ptc2"></button></div>
+    <div class="row"><span>PTC 3 <span class="tag" id="t_ptc3">-</span></span><button class="sw" data-k="ptc3" aria-label="ptc3"></button></div>
+    <div class="row"><span>PTC 4 <span class="tag" id="t_ptc4">-</span></span><button class="sw" data-k="ptc4" aria-label="ptc4"></button></div>
     <p class="note">Tombol = perintah. Label hijau/abu = keadaan relay sebenarnya dari alat.
       Heater hanya menyala kalau blower ON dan suhu &lt; 45 °C.</p>
   </section>
@@ -206,14 +215,14 @@ function render() {
   bs.textContent = locked ? "TERKUNCI — tekan untuk UNLOCK heater" : "Heater AKTIF — tekan untuk LOCK";
   bs.className = "big " + (locked ? "" : "lock");
 
-  $("btnMode").textContent = auto ? "AUTO" : "MANUAL";
-  $("btnMode").className = auto ? "on" : "";
+  $("modeLbl").textContent = auto ? "AUTO" : "MANUAL";
+  $("btnMode").className = "sw" + (auto ? " on" : "");
   $("btnMode").disabled = locked;
+  $("lockHint").style.display = locked ? "block" : "none";
 
   document.querySelectorAll("button[data-k]").forEach(b => {
     const k = b.dataset.k, on = !!control[k];
-    b.textContent = on ? "ON" : "OFF";
-    b.className = on ? "on" : "";
+    b.className = "sw" + (on ? " on" : "");
     b.disabled = k !== "blower" && (locked || auto);
   });
 }
