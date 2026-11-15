@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#14532d">
+<title>Pengering Gabah</title>
+<style>
+  :root { --bg:#f4f6f3; --card:#fff; --ink:#1b2a1f; --mute:#6b7a6f; --line:#dde3dc;
+          --on:#15803d; --off:#9ca3af; --warn:#b91c1c; --accent:#14532d; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#0f1511; --card:#18211b; --ink:#e7efe9; --mute:#93a397; --line:#2a352d; }
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; font:15px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--ink); }
+  header { background:var(--accent); color:#fff; padding:14px 16px; display:flex; justify-content:space-between; align-items:center; }
+  header h1 { font-size:17px; margin:0; }
+  #online { font-size:13px; padding:3px 10px; border-radius:99px; background:#0003; }
+  main { max-width:900px; margin:0 auto; padding:16px; display:grid; gap:12px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:12px; padding:14px; }
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(140px,1fr)); gap:10px; }
+  .metric .v { font-size:26px; font-weight:650; font-variant-numeric:tabular-nums; }
+  .metric .l { color:var(--mute); font-size:13px; }
+  h2 { font-size:14px; margin:0 0 10px; color:var(--mute); text-transform:uppercase; letter-spacing:.04em; }
+  .row { display:flex; justify-content:space-between; align-items:center; padding:9px 0; border-top:1px solid var(--line); }
+  .row:first-of-type { border-top:0; }
+  .tag { font-size:12px; padding:2px 8px; border-radius:99px; background:var(--off); color:#fff; margin-left:6px; }
+  .tag.on { background:var(--on); }
+  button { font:inherit; border:0; border-radius:10px; padding:10px 16px; cursor:pointer; background:var(--line); color:var(--ink); min-width:78px; }
+  button.on { background:var(--on); color:#fff; }
+  button:disabled { opacity:.4; cursor:not-allowed; }
+  button.big { width:100%; padding:14px; font-weight:600; }
+  button.lock { background:var(--warn); color:#fff; }
+  input { font:inherit; width:100%; padding:11px; border:1px solid var(--line); border-radius:10px; margin-bottom:10px; background:var(--card); color:var(--ink); }
+  .note { color:var(--mute); font-size:13px; }
+  #login { max-width:360px; margin:40px auto; }
+  #app { display:none; }
+  canvas { width:100%!important; height:220px!important; }
+</style>
+</head>
+<body>
+<header><h1>Pengering Gabah</h1><span id="online">-</span></header>
+
+<div id="login" class="card">
+  <h2>Masukkan PIN</h2>
+  <input id="pass" type="password" inputmode="numeric" placeholder="PIN" autocomplete="current-password">
+  <button class="big on" id="btnLogin">Masuk</button>
+  <p class="note" id="loginMsg"></p>
+</div>
+
+<main id="app">
+  <section class="card">
+    <div class="grid">
+      <div class="metric"><div class="v" id="m_suhu">-</div><div class="l">Suhu (°C)</div></div>
+      <div class="metric"><div class="v" id="m_rh">-</div><div class="l">RH udara (%)</div></div>
+      <div class="metric"><div class="v" id="m_gabah">-</div><div class="l">Kelembapan gabah (%)</div></div>
+      <div class="metric"><div class="v" id="m_v">-</div><div class="l">Tegangan (V)</div></div>
+      <div class="metric"><div class="v" id="m_a">-</div><div class="l">Arus (A)</div></div>
+      <div class="metric"><div class="v" id="m_w">-</div><div class="l">Daya (W)</div></div>
+      <div class="metric"><div class="v" id="m_wh">-</div><div class="l">Energi (Wh)</div></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <h2>Keselamatan</h2>
+    <button class="big" id="btnSafety">-</button>
+    <p class="note">Setiap ESP32 restart, heater otomatis terkunci (LOCK). Blower tetap jalan.</p>
+  </section>
+
+  <section class="card">
+    <h2>Kontrol</h2>
+    <div class="row"><span>Mode</span><button id="btnMode">-</button></div>
+    <div class="row"><span>Blower <span class="tag" id="t_blower">-</span></span><button data-k="blower">-</button></div>
+    <div class="row"><span>PTC 1 <span class="tag" id="t_ptc1">-</span></span><button data-k="ptc1">-</button></div>
+    <div class="row"><span>PTC 2 <span class="tag" id="t_ptc2">-</span></span><button data-k="ptc2">-</button></div>
+    <div class="row"><span>PTC 3 <span class="tag" id="t_ptc3">-</span></span><button data-k="ptc3">-</button></div>
+    <div class="row"><span>PTC 4 <span class="tag" id="t_ptc4">-</span></span><button data-k="ptc4">-</button></div>
+    <p class="note">Tombol = perintah. Label hijau/abu = keadaan relay sebenarnya dari alat.
+      Heater hanya menyala kalau blower ON dan suhu &lt; 45 °C.</p>
+  </section>
+
+  <section class="card">
+    <h2>Riwayat (3 jam terakhir, data per menit)</h2>
+    <canvas id="chT"></canvas>
+    <canvas id="chP"></canvas>
+    <div class="row"><span class="note">Unduh semua riwayat</span><button id="btnCsv">CSV</button></div>
+  </section>
+
+  <button id="btnLogout">Keluar</button>
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+// Project Supabase "pengering-gabah" (kunci publik, aman ditaruh di sini)
+const SUPABASE_URL = "https://iltdxkjjqphycodazvut.supabase.co";
+const SUPABASE_KEY = "sb_publishable_QXpxb2AAmIfE94PTmrNMqg_LzPP9F0Z";
+// Akun alat tetap; yang diketik pengguna hanya PIN (= password akun ini)
+const LOGIN_EMAIL = "alat@pengering-gabah.app";
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const $ = id => document.getElementById(id);
+let control = {}, status = {};
+
+$("pass").onkeydown = e => { if (e.key === "Enter") $("btnLogin").click(); };
+$("btnLogin").onclick = async () => {
+  $("loginMsg").textContent = "Memproses...";
+  const { error } = await sb.auth.signInWithPassword({ email: LOGIN_EMAIL, password: $("pass").value.trim() });
+  $("loginMsg").textContent = error ? "PIN salah" : "";
+  $("pass").value = "";
+};
+$("btnLogout").onclick = () => sb.auth.signOut();
+
+sb.auth.onAuthStateChange((_e, session) => {
+  $("login").style.display = session ? "none" : "block";
+  $("app").style.display = session ? "grid" : "none";
+  if (session) setTimeout(start, 0);
+});
+
+function fmt(v, d) { return (v === null || v === undefined || isNaN(v)) ? "-" : Number(v).toFixed(d); }
+async function setControl(patch) {
+  const { error } = await sb.from("control").update(patch).eq("id", 1);
+  if (error) alert("Gagal mengirim perintah: " + error.message);
+  else loadControl();
+}
+async function loadControl() {
+  const { data } = await sb.from("control").select("*").eq("id", 1).single();
+  if (data) { control = data; render(); }
+}
+
+function showStatus(d) {
+  status = d || {};
+  $("m_suhu").textContent = fmt(status.suhu1, 1);
+  $("m_rh").textContent = fmt(status.kelembapan_udara, 0);
+  $("m_gabah").textContent = fmt(status.soil_percent, 1);
+  $("m_v").textContent = fmt(status.voltage, 2);
+  $("m_a").textContent = fmt(status.current, 2);
+  $("m_w").textContent = fmt(status.power, 1);
+  $("m_wh").textContent = fmt(status.energy_wh, 2);
+  for (const k of ["ptc1","ptc2","ptc3","ptc4","blower"]) {
+    const on = status[k] == 1;
+    $("t_" + k).textContent = on ? "ON" : "OFF";
+    $("t_" + k).className = "tag" + (on ? " on" : "");
+  }
+  updateOnline();
+}
+
+let started = false, chT, chP;
+const N = 180;
+function addPoint(d) {
+  const t = new Date(d.ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  const push = (ch, vals) => {
+    ch.data.labels.push(t);
+    vals.forEach((v, i) => ch.data.datasets[i].data.push(v));
+    if (ch.data.labels.length > N) { ch.data.labels.shift(); ch.data.datasets.forEach(x => x.data.shift()); }
+    ch.update();
+  };
+  push(chT, [d.suhu1, d.soil_percent, d.kelembapan_udara]);
+  push(chP, [d.power, d.voltage, d.current]);
+}
+
+async function start() {
+  if (started) return; started = true;
+
+  const mk = (el, sets) => new Chart(el, {
+    type: "line",
+    data: { labels: [], datasets: sets.map(([label, color]) => ({ label, data: [], borderColor: color, pointRadius: 0, borderWidth: 2 })) },
+    options: { animation: false, responsive: true, maintainAspectRatio: false, interaction: { mode: "index", intersect: false },
+               scales: { x: { ticks: { maxTicksLimit: 6 } } } }
+  });
+  chT = mk($("chT"), [["Suhu °C", "#c2410c"], ["Gabah %", "#15803d"], ["RH %", "#2563eb"]]);
+  chP = mk($("chP"), [["Daya W", "#7c3aed"], ["Tegangan V", "#0891b2"], ["Arus A", "#ca8a04"]]);
+
+  loadControl();
+  const st = await sb.from("status").select("*").eq("id", 1).single();
+  showStatus(st.data);
+  const lg = await sb.from("log").select("*").order("ts", { ascending: false }).limit(N);
+  (lg.data || []).reverse().forEach(addPoint);
+
+  // Perubahan langsung (realtime)
+  sb.channel("alat")
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "status" }, p => showStatus(p.new))
+    .on("postgres_changes", { event: "UPDATE", schema: "public", table: "control" }, p => { control = p.new; render(); })
+    .on("postgres_changes", { event: "INSERT", schema: "public", table: "log" }, p => addPoint(p.new))
+    .subscribe();
+
+  // Cadangan kalau realtime terputus
+  setInterval(async () => {
+    const r = await sb.from("status").select("*").eq("id", 1).single();
+    if (r.data) showStatus(r.data);
+  }, 10000);
+}
+
+function updateOnline() {
+  const age = (Date.now() - new Date(status.ts || 0).getTime()) / 1000;
+  const on = status.ts && age < 15;
+  $("online").textContent = on ? "● Alat online" : "○ Alat offline";
+}
+setInterval(updateOnline, 3000);
+
+function render() {
+  const locked = control.safety !== "UNLOCK";
+  const auto = control.mode === "AUTO";
+
+  const bs = $("btnSafety");
+  bs.textContent = locked ? "TERKUNCI — tekan untuk UNLOCK heater" : "Heater AKTIF — tekan untuk LOCK";
+  bs.className = "big " + (locked ? "" : "lock");
+
+  $("btnMode").textContent = auto ? "AUTO" : "MANUAL";
+  $("btnMode").className = auto ? "on" : "";
+  $("btnMode").disabled = locked;
+
+  document.querySelectorAll("button[data-k]").forEach(b => {
+    const k = b.dataset.k, on = !!control[k];
+    b.textContent = on ? "ON" : "OFF";
+    b.className = on ? "on" : "";
+    b.disabled = k !== "blower" && (locked || auto);
+  });
+}
+
+$("btnSafety").onclick = () => {
+  const locked = control.safety !== "UNLOCK";
+  if (locked && !confirm("Buka kunci heater? Pastikan alat diawasi.")) return;
+  setControl({ safety: locked ? "UNLOCK" : "LOCK" });
+};
+$("btnMode").onclick = () => setControl({ mode: control.mode === "AUTO" ? "MANUAL" : "AUTO" });
+document.querySelectorAll("button[data-k]").forEach(b =>
+  b.onclick = () => {
+    const k = b.dataset.k;
+    if (k === "blower" && control.blower && !confirm("Matikan blower? Heater ikut mati.")) return;
+    setControl({ [k]: !control[k] });
+  });
+
+$("btnCsv").onclick = async () => {
+  const cols = ["ts","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
+  const rows = [cols.join(",")];
+  for (let from = 0; ; from += 1000) {   // ambil per 1000 baris
+    const { data, error } = await sb.from("log").select(cols.join(",")).order("ts").range(from, from + 999);
+    if (error) { alert(error.message); return; }
+    data.forEach(d => rows.push(cols.map(k => d[k] ?? "").join(",")));
+    if (data.length < 1000) break;
+  }
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([rows.join("\n")], { type: "text/csv" }));
+  a.download = "log_pengering_gabah_" + new Date().toISOString().slice(0, 10) + ".csv";
+  a.click();
+};
+</script>
+</body>
+</html>
