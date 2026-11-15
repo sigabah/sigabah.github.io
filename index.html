@@ -79,6 +79,7 @@
   .seg { display:inline-flex; border:1px solid var(--line); border-radius:6px; overflow:hidden; }
   .seg button { border:0; background:transparent; color:var(--mute); font:inherit; font-size:12px; padding:5px 10px; cursor:pointer; }
   .seg button.on { background:var(--brand); color:#fff; }
+  #day { padding:4px 8px; color:var(--ink); }
   .chartBox { position:relative; height:260px; }
   .toolbar { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
   .toolbar h2 { margin:0; }
@@ -114,11 +115,11 @@
 
 <main id="app">
   <section class="kpis">
-    <div class="card kpi" style="--accent:var(--c1)"><div class="l">Suhu ruang pengering</div><div class="v"><span id="m_suhu">-</span><u>°C</u></div><div class="mm" id="mm_suhu">24 jam: -</div></div>
-    <div class="card kpi" style="--accent:var(--c2)"><div class="l">Kelembapan gabah</div><div class="v"><span id="m_gabah">-</span><u>%</u></div><div class="mm" id="mm_gabah">24 jam: -</div></div>
-    <div class="card kpi" style="--accent:var(--c3)"><div class="l">RH udara</div><div class="v"><span id="m_rh">-</span><u>%</u></div><div class="mm" id="mm_rh">24 jam: -</div></div>
-    <div class="card kpi" style="--accent:var(--c4)"><div class="l">Daya</div><div class="v"><span id="m_w">-</span><u>W</u></div><div class="mm" id="mm_w">24 jam: -</div></div>
-    <div class="card kpi" style="--accent:var(--c5)"><div class="l">Tegangan · Arus</div><div class="v"><span id="m_v">-</span><u>V</u> <span id="m_a" style="font-size:20px">-</span><u>A</u></div><div class="mm" id="mm_v">24 jam: -</div></div>
+    <div class="card kpi" style="--accent:var(--c1)"><div class="l">Suhu ruang pengering</div><div class="v"><span id="m_suhu">-</span><u>°C</u></div><div class="mm" id="mm_suhu">Hari ini: -</div></div>
+    <div class="card kpi" style="--accent:var(--c2)"><div class="l">Kelembapan gabah</div><div class="v"><span id="m_gabah">-</span><u>%</u></div><div class="mm" id="mm_gabah">Hari ini: -</div></div>
+    <div class="card kpi" style="--accent:var(--c3)"><div class="l">RH udara</div><div class="v"><span id="m_rh">-</span><u>%</u></div><div class="mm" id="mm_rh">Hari ini: -</div></div>
+    <div class="card kpi" style="--accent:var(--c4)"><div class="l">Daya</div><div class="v"><span id="m_w">-</span><u>W</u></div><div class="mm" id="mm_w">Hari ini: -</div></div>
+    <div class="card kpi" style="--accent:var(--c5)"><div class="l">Tegangan · Arus</div><div class="v"><span id="m_v">-</span><u>V</u> <span id="m_a" style="font-size:20px">-</span><u>A</u></div><div class="mm" id="mm_v">Hari ini: -</div></div>
     <div class="card kpi" style="--accent:var(--c6)"><div class="l">Energi terpakai</div><div class="v"><span id="m_wh">-</span><u>Wh</u></div><div class="mm">sejak ESP32 menyala</div></div>
   </section>
 
@@ -140,7 +141,8 @@
       <div class="toolbar">
         <h2>Suhu &amp; kelembapan</h2>
         <span class="right">
-          <span class="seg" id="range"><button data-h="1">1 jam</button><button data-h="6">6 jam</button><button data-h="24" class="on">24 jam</button></span>
+          <span class="seg" id="range"><button data-m="day" class="on">Harian 00–24</button><button data-m="24">24 jam terakhir</button><button data-m="6">6 jam</button><button data-m="1">1 jam</button></span>
+          <input type="date" id="day" class="btn" title="Pilih tanggal">
           <button class="btn" id="btnCsv">⬇ CSV</button>
         </span>
       </div>
@@ -168,7 +170,10 @@ const HOUR = 3600e3;
 const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 const $ = id => document.getElementById(id);
 const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
-let control = {}, status = {}, rows = [], rangeH = 24;
+let control = {}, status = {}, rows = [], viewMode = "day", viewDay = null;
+const WIB = 7 * HOUR;   // WIB = UTC+7 (tanpa DST)
+const wibMidnight = ms => Math.floor((ms + WIB) / (24 * HOUR)) * 24 * HOUR - WIB;
+const wibDateStr = ms => new Date(ms + WIB).toISOString().slice(0, 10);
 
 // ---------- Login ----------
 $("pass").onkeydown = e => { if (e.key === "Enter") $("btnLogin").click(); };
@@ -245,7 +250,15 @@ Chart.defaults.color = css("--mute");
 function makeChart(el, series, axes) {
   const scales = {
     x: { type: "linear", grid: { display: false }, border: { color: css("--line") },
-         ticks: { maxTicksLimit: 8, callback: v => hhmm(v) } },
+         afterBuildTicks: ax => {   // tick tepat di jam bulat WIB
+           const span = ax.max - ax.min;
+           const step = span > 12 * HOUR ? 2 * HOUR : span > 3 * HOUR ? HOUR : 15 * 60e3;
+           const t = [];
+           for (let v = Math.ceil((ax.min + WIB) / step) * step - WIB; v <= ax.max; v += step) t.push({ value: v });
+           ax.ticks = t;
+         },
+         ticks: { autoSkip: false, maxRotation: 0,
+                  callback: (v, i, all) => (viewMode === "day" && i === all.length - 1 && v - wibMidnight(v - 1) === 24 * HOUR) ? "24.00" : hhmm(v) } },
   };
   axes.forEach((a, i) => scales[a.id] = {
     position: i ? "right" : "left", beginAtZero: a.zero ?? false,
@@ -293,23 +306,28 @@ const MAP = [
   [() => chVA, ["voltage", "current"]],
 ];
 
+function windowRange() {
+  const now = Date.now();
+  if (viewMode === "day") { const m = viewDay ?? wibMidnight(now); return [m, m + 24 * HOUR]; }
+  return [now - Number(viewMode) * HOUR, now];
+}
 function redraw() {
-  const now = Date.now(), min = now - rangeH * HOUR;
-  rows = rows.filter(r => r.t >= now - 24 * HOUR);
-  const view = rows.filter(r => r.t >= min);
+  const [min, max] = windowRange();
+  const view = rows.filter(r => r.t >= min && r.t <= max);
   for (const [get, keys] of MAP) {
     const ch = get();
     keys.forEach((k, i) => ch.data.datasets[i].data = view.filter(r => r[k] !== null && r[k] !== undefined).map(r => ({ x: r.t, y: Number(r[k]) })));
     ch.options.scales.x.min = min;
-    ch.options.scales.x.max = now;
+    ch.options.scales.x.max = max;
     ch.update("none");
   }
   ["T", "W", "VA"].forEach(id => $("e_" + id).style.display = view.length ? "none" : "grid");
 
-  // Min / maks 24 jam di KPI
+  // Min / maks periode yang ditampilkan
+  const label = viewMode === "day" ? (viewDay === null ? "Hari ini" : new Date(min + WIB).toLocaleDateString("id-ID", { day: "numeric", month: "short", timeZone: "UTC" })) : viewMode + " jam";
   const mm = (k, d) => {
-    const v = rows.map(r => r[k]).filter(x => x !== null && x !== undefined).map(Number);
-    return v.length ? "24 jam: min " + fmt(Math.min(...v), d) + " · maks " + fmt(Math.max(...v), d) : "24 jam: -";
+    const v = view.map(r => r[k]).filter(x => x !== null && x !== undefined).map(Number);
+    return v.length ? label + ": min " + fmt(Math.min(...v), d) + " · maks " + fmt(Math.max(...v), d) : label + ": -";
   };
   $("mm_suhu").textContent = mm("suhu1", 1);
   $("mm_gabah").textContent = mm("soil_percent", 1);
@@ -319,17 +337,26 @@ function redraw() {
 }
 
 document.querySelectorAll("#range button").forEach(b => b.onclick = () => {
-  rangeH = Number(b.dataset.h);
+  viewMode = b.dataset.m;
+  if (viewMode !== "day") viewDay = null;
   document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x === b));
-  redraw();
+  $("day").value = wibDateStr(windowRange()[0]);
+  loadWindow();
 });
+$("day").onchange = () => {
+  if (!$("day").value) return;
+  const m = Date.parse($("day").value + "T00:00:00+07:00");
+  viewMode = "day"; viewDay = (m === wibMidnight(Date.now())) ? null : m;
+  document.querySelectorAll("#range button").forEach(x => x.classList.toggle("on", x.dataset.m === "day"));
+  loadWindow();
+};
 
-async function load24h() {
-  const since = new Date(Date.now() - 24 * HOUR).toISOString();
+async function loadWindow() {
+  const [min, max] = windowRange();
   const out = [];
-  for (let from = 0; ; from += 1000) {   // 1 data/menit -> ±1440 baris
+  for (let from = 0; ; from += 1000) {   // 1 data/menit -> maks ±1440 baris
     const { data, error } = await sb.from("log").select("ts,suhu1,kelembapan_udara,soil_percent,voltage,current,power")
-      .gte("ts", since).order("ts").range(from, from + 999);
+      .gte("ts", new Date(min).toISOString()).lte("ts", new Date(max).toISOString()).order("ts").range(from, from + 999);
     if (error || !data) break;
     out.push(...data);
     if (data.length < 1000) break;
@@ -346,7 +373,9 @@ async function start() {
   loadControl();
   const st = await sb.from("status").select("*").eq("id", 1).single();
   showStatus(st.data);
-  await load24h();
+  $("day").value = wibDateStr(Date.now());
+  $("day").max = wibDateStr(Date.now());
+  await loadWindow();
 
   sb.channel("alat")
     .on("postgres_changes", { event: "UPDATE", schema: "public", table: "status" }, p => showStatus(p.new))
@@ -358,7 +387,10 @@ async function start() {
     const r = await sb.from("status").select("*").eq("id", 1).single();
     if (r.data) showStatus(r.data);
   }, 10000);
-  setInterval(redraw, 60000);  // geser jendela waktu
+  setInterval(() => {   // geser jendela; ganti hari otomatis setelah 24.00 WIB
+    if (viewMode === "day" && viewDay === null && $("day").value !== wibDateStr(Date.now())) { $("day").value = wibDateStr(Date.now()); loadWindow(); }
+    else redraw();
+  }, 60000);
 }
 
 // ---------- Kontrol ----------
