@@ -154,15 +154,13 @@
   <section class="row2">
     <div class="card">
       <h2>Kontrol alat <small>perintah → relay ±2 detik</small></h2>
-      <button class="safety" id="btnSafety">-</button>
-      <p id="lockHint">🔒 Heater terkunci. Tekan UNLOCK dulu supaya PTC dan Mode bisa diatur.</p>
       <div class="ctl"><span class="name">Mode AUTO</span><span class="right"><span class="modeLbl" id="modeLbl">MANUAL</span><button class="sw" id="btnMode" aria-label="Mode AUTO"></button></span></div>
       <div class="ctl"><span><span class="name">Blower</span><span class="state" id="t_blower">-</span></span><button class="sw" data-k="blower" aria-label="Blower"></button></div>
       <div class="ctl"><span><span class="name">Heater PTC 1</span><span class="state" id="t_ptc1">-</span></span><button class="sw" data-k="ptc1" aria-label="PTC 1"></button></div>
       <div class="ctl"><span><span class="name">Heater PTC 2</span><span class="state" id="t_ptc2">-</span></span><button class="sw" data-k="ptc2" aria-label="PTC 2"></button></div>
       <div class="ctl"><span><span class="name">Heater PTC 3</span><span class="state" id="t_ptc3">-</span></span><button class="sw" data-k="ptc3" aria-label="PTC 3"></button></div>
       <div class="ctl"><span><span class="name">Heater PTC 4</span><span class="state" id="t_ptc4">-</span></span><button class="sw" data-k="ptc4" aria-label="PTC 4"></button></div>
-      <p class="hint">Switch = perintah. Label ON/OFF = keadaan relay sebenarnya. Heater hanya menyala kalau blower ON dan suhu &lt; 45 °C. Setiap ESP32 restart, heater otomatis terkunci.</p>
+      <p class="hint">Switch = perintah. Label ON/OFF = keadaan relay sebenarnya. Saat alat menyala, blower + PTC 1–4 langsung ON. PTC mati otomatis di ≥ 50 °C dan hidup lagi di ≤ 45 °C. Mode AUTO = semua PTC ON (tetap dengan batas suhu).</p>
     </div>
 
     <div class="card">
@@ -424,47 +422,19 @@ async function start() {
 
 // ---------- Kontrol ----------
 function render() {
-  const locked = control.safety !== "UNLOCK";
   const auto = control.mode === "AUTO";
-  const bs = $("btnSafety");
-  if (!bs.classList.contains("arm")) bs.textContent = locked ? "🔒 TERKUNCI — tekan untuk UNLOCK heater" : "🔓 Heater AKTIF — tekan untuk LOCK";
-  bs.className = "safety" + (locked ? "" : " unlocked") + (bs.classList.contains("arm") ? " arm" : "");
   $("modeLbl").textContent = auto ? "AUTO" : "MANUAL";
   $("btnMode").className = "sw" + (auto ? " on" : "");
-  $("btnMode").disabled = locked;
-  $("lockHint").textContent = "🔒 Heater terkunci. Tekan UNLOCK dulu supaya PTC dan Mode bisa diatur.";
-  $("lockHint").style.display = locked ? "block" : "none";
   document.querySelectorAll("button[data-k]").forEach(b => {
-    const k = b.dataset.k, on = !!control[k];
-    b.className = "sw" + (on ? " on" : "");
-    b.disabled = k !== "blower" && (locked || auto);
+    const k = b.dataset.k;
+    b.className = "sw" + (control[k] ? " on" : "");
+    b.disabled = k !== "blower" && auto;   // AUTO: PTC diatur alat
   });
 }
 
-// Konfirmasi di halaman (tekan 2x), karena confirm() sering diblokir di HP/aplikasi
-let armed = null, armTimer = null;
-function confirmTap(key, btn, msg) {
-  if (armed === key) { armed = null; clearTimeout(armTimer); btn.classList.remove("arm"); return true; }
-  armed = key;
-  if (msg) btn.textContent = msg;
-  btn.classList.add("arm");
-  clearTimeout(armTimer);
-  armTimer = setTimeout(() => { armed = null; btn.classList.remove("arm"); render(); }, 4000);
-  return false;
-}
-$("btnSafety").onclick = () => {
-  const locked = control.safety !== "UNLOCK";
-  if (locked && !confirmTap("unlock", $("btnSafety"), "⚠ Yakin? Tekan sekali lagi untuk UNLOCK")) return;
-  setControl({ safety: locked ? "UNLOCK" : "LOCK" });
-};
 $("btnMode").onclick = () => setControl({ mode: control.mode === "AUTO" ? "MANUAL" : "AUTO" });
 document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
   const k = b.dataset.k;
-  if (k === "blower" && control.blower && !confirmTap("blower", b)) {
-    $("lockHint").style.display = "block";
-    $("lockHint").textContent = "Geser sekali lagi dalam 4 detik untuk mematikan blower (heater ikut mati).";
-    return;
-  }
   setControl({ [k]: !control[k] });
 });
 
