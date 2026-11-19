@@ -161,6 +161,12 @@
       <div class="ctl"><span><span class="name">Heater PTC 3</span><span class="state" id="t_ptc3">-</span></span><button class="sw" data-k="ptc3" aria-label="PTC 3"></button></div>
       <div class="ctl"><span><span class="name">Heater PTC 4</span><span class="state" id="t_ptc4">-</span></span><button class="sw" data-k="ptc4" aria-label="PTC 4"></button></div>
       <p class="hint">Switch = perintah. Label ON/OFF = keadaan relay sebenarnya. Saat alat menyala, blower + PTC 1–4 langsung ON. PTC mati otomatis di ≥ 50 °C dan hidup lagi di ≤ 45 °C. Mode AUTO = semua PTC ON (tetap dengan batas suhu).</p>
+      <h2 style="margin-top:14px">Run pengujian <small>ikut tercatat di log</small></h2>
+      <div class="ctl"><span class="name">ID run</span><input id="runId" class="btn" maxlength="24" placeholder="mis. P2-R1" style="width:140px"></div>
+      <div class="ctl"><span class="name">Perlakuan</span><select id="perl" class="btn"><option value="">-</option><option>P0</option><option>P2</option><option>P4</option></select></div>
+      <div class="ctl"><span class="name">Posisi kenop PWM</span><input id="pwmPos" class="btn" type="number" min="0" max="100" style="width:90px"></div>
+      <div class="ctl"><button class="btn" id="btnRun">Simpan run</button><button class="btn" id="btnReset" title="Nol-kan energi di awal run">Reset energi (awal run)</button></div>
+      <p class="hint">Isi sebelum run dimulai, lalu tekan Simpan run dan Reset energi. Atur PTC sesuai perlakuan: P0 semua PTC OFF, P2 = PTC1 dan PTC2, P4 = PTC1–4.</p>
     </div>
 
     <div class="card">
@@ -430,7 +436,15 @@ function render() {
     b.className = "sw" + (control[k] ? " on" : "");
     b.disabled = k !== "blower" && auto;   // AUTO: PTC diatur alat
   });
+  renderRun();
 }
+
+function renderRun() {
+  if (document.activeElement && ["runId","perl","pwmPos"].includes(document.activeElement.id)) return;
+  $("runId").value = control.run_id || ""; $("perl").value = control.perlakuan || ""; $("pwmPos").value = control.pwm_pos ?? "";
+}
+$("btnRun").onclick = () => setControl({ run_id: $("runId").value.trim(), perlakuan: $("perl").value, pwm_pos: parseInt($("pwmPos").value || "0", 10) });
+$("btnReset").onclick = () => { if (confirm("Reset energi ke 0 Wh untuk awal run?")) setControl({ reset_energy: true }); };
 
 $("btnMode").onclick = () => setControl({ mode: control.mode === "AUTO" ? "MANUAL" : "AUTO" });
 document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
@@ -442,10 +456,10 @@ document.querySelectorAll("button[data-k]").forEach(b => b.onclick = () => {
 $("btnCsv").onclick = async () => {
   const btn = $("btnCsv"); btn.textContent = "Menyiapkan…"; btn.disabled = true;
   try {
-    const cols = ["ts","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
+    const cols = ["ts","ts_device","run_id","perlakuan","pwm_pos","suhu1","kelembapan_udara","soil_raw","soil_percent","voltage","current","power","energy_wh","ptc1","ptc2","ptc3","ptc4","blower","mode","startup_lock"];
     const all = [];
     for (let from = 0; ; from += 1000) {
-      const { data, error } = await sb.from("log").select(cols.join(",")).order("ts").range(from, from + 999);
+      const { data, error } = await sb.from("log").select(cols.join(",")).order("ts_device", { nullsFirst: true }).order("ts").range(from, from + 999);
       if (error) { alert(error.message); return; }
       all.push(...data);
       if (data.length < 1000) break;
@@ -453,7 +467,8 @@ $("btnCsv").onclick = async () => {
     // Waktu ditulis sebagai tanggal-jam WIB (Excel tidak menyimpan zona waktu)
     const tzFix = ms => new Date(ms + WIB + new Date(ms).getTimezoneOffset() * 60e3);
     const sheet = all.map(d => ({
-      "Waktu (WIB)": tzFix(new Date(d.ts).getTime()),
+      "Waktu (WIB)": tzFix(new Date(d.ts_device || d.ts).getTime()),
+      "ID run": d.run_id, "Perlakuan": d.perlakuan, "Kenop PWM": d.pwm_pos,
       "Suhu (°C)": d.suhu1, "RH udara (%)": d.kelembapan_udara,
       "Gabah raw (ADC)": d.soil_raw, "Kelembapan gabah (%)": d.soil_percent,
       "Tegangan (V)": d.voltage, "Arus (A)": d.current, "Daya (W)": d.power, "Energi (Wh)": d.energy_wh,
@@ -461,7 +476,7 @@ $("btnCsv").onclick = async () => {
       "Mode": d.mode, "Terkunci": d.startup_lock,
     }));
     const ws = XLSX.utils.json_to_sheet(sheet, { cellDates: true, dateNF: "dd/mm/yyyy hh:mm:ss" });
-    ws["!cols"] = [{ wch: 20 }, ...Array(15).fill({ wch: 13 })];
+    ws["!cols"] = [{ wch: 20 }, ...Array(18).fill({ wch: 13 })];
     ws["!freeze"] = { xSplit: 0, ySplit: 1 };
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Log SiGabah");
